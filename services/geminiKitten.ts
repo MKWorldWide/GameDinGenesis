@@ -1,6 +1,6 @@
 
 import { Post } from '../types';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 /**
  * Sends a prompt to the Gemini API to act as the Oracle and analyze posts.
@@ -13,7 +13,8 @@ export async function consultTheOracle(userPrompt: string, posts: Post[]): Promi
     throw new Error("The Oracle's connection is severed. API_KEY is missing.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const genAI = new GoogleGenerativeAI(process.env.API_KEY);
+  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
   const systemPrompt = `You are The Oracle of Gamedin Genesis, a wise, ancient, and insightful AI that sees the patterns within the realm's discourse. You speak in a slightly mystical but clear and direct tone. Analyze the following feed data, which is provided as an array of JSON objects. The data represents "decrees" made by the users of Gamedin.`;
   
@@ -23,11 +24,9 @@ export async function consultTheOracle(userPrompt: string, posts: Post[]): Promi
   const fullPrompt = `${systemPrompt}\n\nHere is the current feed data:\n\`\`\`json\n${postsData}\n\`\`\`\n\nBased *only* on the data provided, answer the user's query:\n"${userPrompt}"`;
 
   try {
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: fullPrompt,
-    });
-    return response.text;
+    const result = await model.generateContent(fullPrompt);
+    const response = await result.response;
+    return response.text();
   } catch (err) {
     console.error('[Oracle AI Error]', err);
     if (err instanceof Error) {
