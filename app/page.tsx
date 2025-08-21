@@ -10,8 +10,11 @@ export default function Home() {
 
   async function send() {
     if (!input.trim() || busy) return;
-    const next = [...msgs, { role:'user', content: input }];
-    setMsgs(next); setInput(''); setBusy(true);
+    const userMessage: Msg = { role: 'user' as const, content: input };
+    const next = [...msgs, userMessage];
+    setMsgs(next);
+    setInput('');
+    setBusy(true);
     try {
       const res = await fetch('/api/chat', {
         method:'POST', 
@@ -20,9 +23,11 @@ export default function Home() {
       });
       const data = await res.json();
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '[no response]';
-      setMsgs(prev => [...prev, { role:'model', content:text }]);
+      const modelMessage: Msg = { role: 'model' as const, content: text };
+      setMsgs(prev => [...prev, modelMessage]);
     } catch (e:any) {
-      setMsgs(prev => [...prev, { role:'model', content:`[error] ${e?.message ?? e}` }]);
+      const errorMessage: Msg = { role: 'model' as const, content: `[error] ${e?.message ?? e}` };
+      setMsgs(prev => [...prev, errorMessage]);
     } finally { 
       setBusy(false); 
     }
