@@ -1,0 +1,11 @@
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly VITE_GOOGLE_API_KEY: string;
+  readonly VITE_MODEL_ID: string;
+  // Add other environment variables here as needed
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
