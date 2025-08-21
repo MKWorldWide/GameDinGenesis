@@ -59,7 +59,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onNewPost }) => {
         syndicateTo.forEach(provider => {
             postToNetwork(provider, content);
         });
-        showToast(`Decree syndicated to ${[...syndicateTo].join(', ')}!`);
+        showToast(`Decree syndicated to ${Array.from(syndicateTo).join(', ')}!`);
     }
 
     setContent('');
