@@ -5,7 +5,16 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
-    "strict": true
+    "strict": true,
+    "types": ["node"],
+    "esModuleInterop": true,
+    "resolveJsonModule": true
   },
-  "include": ["vite.config.ts"]
+  "include": [
+    "vite.config.*",
+    "vitest.config.*",
+    "scripts/**/*",
+    "tests/**/*.ts",
+    "tests/**/*.tsx"
+  ]
 }
