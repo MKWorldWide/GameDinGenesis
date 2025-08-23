@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameDinGenesis</title>
+  <script>
+    // Single Page Apps for GitHub Pages
+    (function() {
+      var redirect = sessionStorage.redirect;
+      delete sessionStorage.redirect;
+      if (redirect && redirect !== location.href) {
+        history.replaceState(null, null, redirect);
+      }
+    })();
+  </script>
+  <script type="module" src="/src/main.tsx"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    // Handle 404s by redirecting to index.html
+    const path = window.location.pathname;
+    if (path !== '/' && !path.endsWith('.html')) {
+      sessionStorage.redirect = path;
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>

@@ -1,25 +1,20 @@
 // vite.config.vercel.ts
-import { defineConfig, mergeConfig, type UserConfigExport } from "vite";
+import { defineConfig, loadEnv, mergeConfig, type UserConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { fileURLToPath } from 'url';
 
-async function loadBase(env: any): Promise<UserConfigExport> {
-  // Try TS first, then JS. If neither exists, return empty config.
-  try {
-    const m = await import("./vite.config.ts");
-    return typeof m.default === "function" ? m.default(env) : (m.default ?? {});
-  } catch {}
-  try {
-    const m = await import("./vite.config.js");
-    return typeof m.default === "function" ? m.default(env) : (m.default ?? {});
-  } catch {}
-  return {};
-}
-
-export default defineConfig(async (env) => {
-  const base = await loadBase(env);
-  return mergeConfig(base, {
+export default defineConfig(({ mode }) => {
+  // Load env file based on `mode` in the current directory and its parent directories
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  // Check if running in GitHub Pages environment
+  const isGHPages = process.env.GITHUB_ACTIONS === 'true';
+  
+  // Base configuration
+  const config: UserConfig = {
     plugins: [react()],
     envPrefix: "VITE_",
+    base: isGHPages ? '/GameDinGenesis/' : '/',
     build: {
       outDir: "dist",
       sourcemap: false,
@@ -29,13 +24,26 @@ export default defineConfig(async (env) => {
       chunkSizeWarningLimit: 1500,
       rollupOptions: {
         output: {
-          manualChunks(id) {
+          manualChunks: (id: string) => {
             return id.includes("node_modules") ? "vendor" : undefined;
           }
         }
       }
     },
-    server: { port: 5173, strictPort: true },
-    preview: { port: 4173, strictPort: true }
-  });
+    server: { 
+      port: 5173, 
+      strictPort: true 
+    },
+    preview: { 
+      port: 4173, 
+      strictPort: true 
+    },
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url))
+      }
+    }
+  };
+  
+  return config;
 });
