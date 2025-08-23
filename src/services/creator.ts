@@ -1,11 +1,43 @@
 import { User } from '../types';
 
-// Using dynamic import to avoid SSR issues with @google/generative-ai
+// Using dynamic import with CDN for browser compatibility
 let GoogleGenAI: any;
 
 if (typeof window === 'undefined') {
   // Server-side import
-  GoogleGenAI = (await import('@google/generative-ai')).GoogleGenerativeAI;
+  const { GoogleGenerativeAI } = await import('@google/generative-ai');
+  GoogleGenAI = GoogleGenerativeAI;
+} else {
+  // Client-side: Load from CDN
+  const script = document.createElement('script');
+  script.src = 'https://www.gstatic.com/generative-ai-sdk/ai-generative-js-1.0.0.umd.js';
+  script.async = true;
+  document.head.appendChild(script);
+  
+  await new Promise<void>((resolve) => {
+    script.onload = () => {
+      if (window.google?.generativeai?.GoogleGenerativeAI) {
+        GoogleGenAI = window.google.generativeai.GoogleGenerativeAI;
+      } else {
+        console.error('Google Generative AI SDK not loaded correctly');
+      }
+      resolve();
+    };
+    script.onerror = () => {
+      console.error('Failed to load Google Generative AI SDK');
+      resolve();
+    };
+  });
+}
+
+declare global {
+  interface Window {
+    google?: {
+      generativeai: {
+        GoogleGenerativeAI: any;
+      };
+    };
+  }
 }
 
 interface ConceptInputs {

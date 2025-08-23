@@ -21,6 +21,7 @@ export default defineConfig(({ mode }) => {
       esbuildOptions: {
         target: 'es2020',
       },
+      include: ['@google/generative-ai'],
     },
     plugins: [
       react(),
@@ -57,6 +58,7 @@ export default defineConfig(({ mode }) => {
       sourcemap: false,
       target: "es2020",
       cssCodeSplit: true,
+      assetsInlineLimit: 4096, // 4kb
       commonjsOptions: {
         transformMixedEsModules: true,
       },
@@ -65,6 +67,14 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         external: ['@google/generative-ai'],
         output: {
+          assetFileNames: (assetInfo) => {
+            const info = assetInfo.name?.split('.');
+            const ext = info?.[info.length - 1] || '';
+            if (ext === 'mp3') {
+              return `assets/audio/[name]-[hash][extname]`;
+            }
+            return `assets/[name]-[hash][extname]`;
+          },
           manualChunks: (id: string) => {
             if (id.includes('node_modules')) {
               return 'vendor';
