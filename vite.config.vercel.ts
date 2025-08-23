@@ -15,6 +15,12 @@ export default defineConfig(({ mode }) => {
   const config: UserConfig = {
     ssr: {
       noExternal: ['@google/generative-ai'],
+      target: 'node',
+    },
+    optimizeDeps: {
+      esbuildOptions: {
+        target: 'es2020',
+      },
     },
     plugins: [
       react(),
@@ -51,6 +57,9 @@ export default defineConfig(({ mode }) => {
       sourcemap: false,
       target: "es2020",
       cssCodeSplit: true,
+      commonjsOptions: {
+        transformMixedEsModules: true,
+      },
       modulePreload: { polyfill: true },
       chunkSizeWarningLimit: 1500,
       rollupOptions: {

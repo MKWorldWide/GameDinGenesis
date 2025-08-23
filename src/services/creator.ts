@@ -1,11 +1,11 @@
 import { User } from '../types';
 
-// Using dynamic import to avoid SSR issues with @google/genai
+// Using dynamic import to avoid SSR issues with @google/generative-ai
 let GoogleGenAI: any;
 
 if (typeof window === 'undefined') {
   // Server-side import
-  GoogleGenAI = require('@google/generative-ai').GoogleGenerativeAI;
+  GoogleGenAI = (await import('@google/generative-ai')).GoogleGenerativeAI;
 }
 
 interface ConceptInputs {
