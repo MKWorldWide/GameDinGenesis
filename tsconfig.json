@@ -23,7 +23,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@testing-library/react": ["./node_modules/@testing-library/react"],
-      "vitest": ["./node_modules/vitest"]
+      "vitest": ["./node_modules/vitest"],
+      "@/lib/*": ["./src/lib/*"]
     },
     "types": ["vite/client", "node"],
     "typeRoots": [

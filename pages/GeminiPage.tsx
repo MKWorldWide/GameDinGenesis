@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { askGemini } from "@/lib/askGemini";
+import { askGemini } from "../src/lib/askGemini";
 
 const GeminiPage = () => {
   const [q, setQ] = useState("Say hi to my queen.");
