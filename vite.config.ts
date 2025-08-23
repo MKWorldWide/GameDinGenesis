@@ -42,6 +42,7 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       emptyOutDir: true,
+      assetsInlineLimit: 0, // This ensures all assets are copied as files
       sourcemap: isProd,
       target: 'esnext',
       minify: isProd ? 'terser' : false,
@@ -79,9 +80,17 @@ export default defineConfig(({ mode }) => {
       }
     },
     server: {
+      headers: {
+        'Content-Type': 'application/javascript',
+      },
       port: 5173,
       strictPort: true,
       open: true
+    },
+    css: {
+      postcss: {
+        plugins: [require('tailwindcss'), require('autoprefixer')],
+      },
     },
     plugins: [
       react(),
