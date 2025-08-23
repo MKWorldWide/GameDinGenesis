@@ -19,6 +19,17 @@ lerna-debug.log*
 .next
 /build
 
+# Docker
+.dockerignore
+Dockerfile
+Dockerfile.*
+.docker
+
+# Environment files
+.env
+.env.*
+!.env.example
+
 # Environment variables
 .env
 .env.local

@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  build:
+    image: node:20
+    container_name: gamedin-builder
+    working_dir: /app
+    volumes:
+      - .:/app
+    entrypoint: bash -c "corepack enable && pnpm install --frozen-lockfile && pnpm build"
+    environment:
+      - NODE_ENV=production
+
+  # For development with hot-reload
+  dev:
+    image: node:20
+    container_name: gamedin-dev
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    command: bash -c "corepack enable && pnpm install && pnpm dev"
+    environment:
+      - NODE_ENV=development
+      - PORT=5173
