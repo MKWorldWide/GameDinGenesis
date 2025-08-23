@@ -13,6 +13,9 @@ export default defineConfig(({ mode }) => {
   
   // Base configuration
   const config: UserConfig = {
+    ssr: {
+      noExternal: ['@google/generative-ai'],
+    },
     plugins: [
       react(),
       VitePWA({
@@ -51,11 +54,18 @@ export default defineConfig(({ mode }) => {
       modulePreload: { polyfill: true },
       chunkSizeWarningLimit: 1500,
       rollupOptions: {
+        external: ['@google/generative-ai'],
         output: {
           manualChunks: (id: string) => {
-            return id.includes("node_modules") ? "vendor" : undefined;
-          }
-        }
+            if (id.includes('node_modules')) {
+              return 'vendor';
+            }
+            return undefined;
+          },
+          globals: {
+            '@google/generative-ai': 'google.genai',
+          },
+        },
       }
     },
     server: { 
