@@ -1,6 +1,7 @@
 // vite.config.vercel.ts
-import { defineConfig, loadEnv, mergeConfig, type UserConfig } from 'vite';
+import { defineConfig, loadEnv, type UserConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath } from 'url';
 
 export default defineConfig(({ mode }) => {
@@ -12,7 +13,34 @@ export default defineConfig(({ mode }) => {
   
   // Base configuration
   const config: UserConfig = {
-    plugins: [react()],
+    plugins: [
+      react(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+        manifest: {
+          name: 'GameDin Genesis',
+          short_name: 'GameDin',
+          description: 'Your gaming social network',
+          theme_color: '#ffffff',
+          icons: [
+            {
+              src: 'pwa-192x192.png',
+              sizes: '192x192',
+              type: 'image/png'
+            },
+            {
+              src: 'pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png'
+            }
+          ]
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+        }
+      })
+    ],
     envPrefix: "VITE_",
     base: isGHPages ? '/GameDinGenesis/' : '/',
     build: {
