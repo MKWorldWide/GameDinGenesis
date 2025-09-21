@@ -1,5 +1,18 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { User } from '../types';
+
+// Get the API key from environment variables
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+// Validate API key on module load
+if (!GEMINI_API_KEY) {
+  console.error('Gemini API Key is missing. Please check your .env.local file.');
+  throw new Error("The Creator's Forge is cold. VITE_GEMINI_API_KEY is missing from environment variables.");
+}
+
+// Initialize the Google Generative AI client
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
 interface ConceptInputs {
     name: string;
@@ -9,11 +22,6 @@ interface ConceptInputs {
 }
 
 export async function generateConcept(inputs: ConceptInputs, user: User): Promise<{ imageUrl: string, description: string }> {
-    if (!process.env.API_KEY) {
-        throw new Error("The Creator's Forge is cold. API_KEY is missing.");
-    }
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
     // --- Image Generation Prompt ---
     const imagePrompt = `Epic fantasy digital painting of a video game character concept named "${inputs.name}".
     Category: ${inputs.category}.
@@ -40,8 +48,7 @@ export async function generateConcept(inputs: ConceptInputs, user: User): Promis
     try {
         console.log('[Creator Service] Generating image and text...');
         const [imageResponse, textResponse] = await Promise.all([
-            ai.models.generateImages({
-                model: 'imagen-3.0-generate-002',
+            model.generateImages({
                 prompt: imagePrompt,
                 config: {
                     numberOfImages: 1,
@@ -49,8 +56,7 @@ export async function generateConcept(inputs: ConceptInputs, user: User): Promis
                     aspectRatio: '3:4',
                 },
             }),
-            ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+            model.generateContent({
                 contents: textPrompt,
             })
         ]);

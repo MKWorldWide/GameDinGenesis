@@ -26,11 +26,9 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner />
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-screen">
+      <LoadingSpinner />
+    </div>;
   }
 
   if (!user) {
@@ -114,6 +112,60 @@ const App: React.FC = () => {
         </ToastProvider>
       </ThemeProvider>
     </Router>
+  );
+};
+
+export default App;
+    if (path.startsWith('/stream/')) {
+        const streamId = path.split('/')[2];
+        return <StreamPage streamId={streamId} />;
+    }
+    
+    if (path.startsWith('/profile/')) {
+        const handle = path.split('/')[2];
+        return <ProfilePage userHandle={handle} />;
+    }
+
+    switch (path) {
+        case '/live':
+            return <LivePage />;
+        case '/matchmaking':
+            return <MatchmakingPage />;
+        case '/chat':
+            return <ChatPage />;
+        case '/profile':
+            return <ProfilePage />;
+        case '/creator-studio':
+            return <CreatorStudioPage />;
+        case '/':
+        default:
+            return <FeedPage />;
+    }
+  };
+
+  return <Layout>{renderPage()}</Layout>;
+};
+
+const HealthStatus = lazy(() => import('./components/HealthStatus'));
+const DivineOracle = lazy(() => import('./components/DivineOracle'));
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <QuantumFidelityProvider>
+            <ReloadPrompt />
+            <AppRouter />
+            <Toast />
+            <Suspense fallback={null}>
+              <HealthStatus />
+              <DivineOracle />
+            </Suspense>
+          </QuantumFidelityProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 };
 

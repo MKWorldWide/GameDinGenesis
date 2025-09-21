@@ -1,35 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../src/hooks/useAuth';
 import { consultTheOracle } from '../services/geminiKitten';
 import { ScarabIcon, PaperPlaneIcon } from './Icons';
+import { LockClosedIcon } from '../src/components/Icons';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import { Post } from '../types';
+import { useNavigate } from 'react-router-dom';
 
 interface OracleWidgetProps {
   posts: Post[];
 }
 
 const OracleWidget: React.FC<OracleWidgetProps> = ({ posts }) => {
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [prompt, setPrompt] = useState('');
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleAsk = async () => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: 'oracle' } });
+      return;
+    }
+
     if (!prompt.trim()) return;
+    
     setIsLoading(true);
     setError(null);
     setAiResponse(null);
+    
     try {
       const result = await consultTheOracle(prompt, posts);
       setAiResponse(result);
     } catch (e) {
-      if (e instanceof Error) {
-        setError(`Failed to receive wisdom from the Oracle. ${e.message}`);
-      } else {
-        setError('An unexpected error occurred.');
-      }
-      console.error(e);
+      const error = e as Error;
+      setError(error.message || 'Failed to consult the Oracle. Please try again.');
+      console.error('Oracle error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -44,9 +53,22 @@ const OracleWidget: React.FC<OracleWidgetProps> = ({ posts }) => {
 
   return (
     <section className="my-12 p-6 bg-slate-800/70 rounded-lg border border-slate-700 shadow-lg">
-      <div className="flex items-center gap-3 mb-4">
-        <ScarabIcon className="w-8 h-8 text-accent" />
-        <h2 className="text-3xl font-bold text-slate-100 tracking-tight">Consult the Oracle</h2>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <ScarabIcon className="w-8 h-8 text-accent" />
+          <h2 className="text-3xl font-bold text-slate-100 tracking-tight">
+            {isAuthenticated ? 'Consult the Oracle' : 'Oracle Access Required'}
+          </h2>
+        </div>
+        {!isAuthenticated && (
+          <button
+            onClick={() => navigate('/login', { state: { from: 'oracle' } })}
+            className="flex items-center gap-2 px-4 py-2 bg-accent/90 hover:bg-accent text-white rounded-md transition-colors"
+          >
+            <LockClosedIcon className="w-4 h-4" />
+            Sign In to Access
+          </button>
+        )}
       </div>
       <p className="text-slate-400 mb-6">
         Seek knowledge of the currents flowing through the Genesis. Ask for a summary of the feed or to find the most impactful decrees.

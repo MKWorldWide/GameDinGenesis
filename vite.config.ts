@@ -2,6 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
+import tailwindcss from 'tailwindcss'
+import autoprefixer from 'autoprefixer'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -10,14 +12,26 @@ export default defineConfig({
   envPrefix: 'VITE_',
   define: {
     'process.env': {
-      VITE_API_URL: JSON.stringify(process.env.VITE_API_URL || 'http://localhost:5173'),
+      VITE_API_URL: JSON.stringify(process.env.VITE_API_URL || 'http://localhost:5173/GameDin'),
       VITE_GEMINI_API_KEY: JSON.stringify(process.env.VITE_GEMINI_API_KEY || '')
     }
+  },
+  css: {
+    postcss: {
+      plugins: [
+        tailwindcss(),
+        autoprefixer(),
+      ],
+    },
   },
   server: {
     port: 5173,
     strictPort: true,
-    open: true
+    open: '/GameDin/',
+    host: true,
+    hmr: {
+      overlay: true
+    }
   },
   plugins: [
     react(),

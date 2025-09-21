@@ -1,13 +1,25 @@
-
-
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NetworkProvider, LinkedAccount, NexusData, Lobby, User, Path, Faction, NexusFeedItem, Post, WorldQuest } from "../types";
 import * as db from './database';
 
+// Get the API key from environment variables
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-// --- MOCK NEXUS SERVICE ---
-// In a real application, these functions would handle OAuth flows,
-// secure API calls to third-party services, and data transformation.
+// Validate API key on module load
+if (!GEMINI_API_KEY) {
+  console.error('Gemini API Key is missing. Please check your .env.local file.');
+  throw new Error("The Nexus is offline. VITE_GEMINI_API_KEY is missing from environment variables.");
+}
+
+// Initialize the Google Generative AI client
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+
+// Log environment status (without exposing the actual key)
+console.log('Nexus Service: Gemini API Status:', GEMINI_API_KEY ? 'Configured' : 'Not Configured');
+
+// --- NEXUS SERVICE ---
+// This service handles connections to third-party services and data aggregation.
 
 /**
  * Mocks connecting a new third-party account.
@@ -47,14 +59,13 @@ export const connectAccount = (provider: NetworkProvider, gamedinUsername: strin
  */
 export const fetchNexusData = async (accounts: LinkedAccount[], user: User): Promise<Partial<NexusData> & { nexusFeed: NexusFeedItem[] }> => {
     console.log('[Nexus AI] Fetching dynamic data for all linked accounts...');
-    if (!process.env.API_KEY) {
-        throw new Error("The Nexus is offline. API_KEY is missing.");
+    if (!GEMINI_API_KEY) {
+        throw new Error("The Nexus is offline. VITE_GEMINI_API_KEY is missing from environment variables.");
     }
     if (accounts.length === 0) {
         return Promise.resolve({ nexusFeed: [] });
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const linkedProviders = accounts.map(a => a.provider);
     const trophyProviders = linkedProviders.filter(p => ['steam', 'xbox', 'playstation'].includes(p));
 
@@ -62,18 +73,18 @@ export const fetchNexusData = async (accounts: LinkedAccount[], user: User): Pro
     const properties: any = {};
     if (linkedProviders.includes('steam')) {
         properties.steam = {
-            type: Type.OBJECT,
+            type: 'object',
             description: 'Steam activity data.',
             properties: {
                 activities: {
-                    type: Type.ARRAY,
+                    type: 'array',
                     description: 'List of recently played games on Steam.',
                     items: {
-                        type: Type.OBJECT,
+                        type: 'object',
                         properties: {
-                            game: { type: Type.STRING, description: 'The name of the game.' },
-                            hoursPlayed: { type: Type.INTEGER, description: 'Total hours played.' },
-                            lastPlayed: { type: Type.STRING, description: 'A relative time string like "Yesterday" or "2 weeks ago".' }
+                            game: { type: 'string', description: 'The name of the game.' },
+                            hoursPlayed: { type: 'integer', description: 'Total hours played.' },
+                            lastPlayed: { type: 'string', description: 'A relative time string like "Yesterday" or "2 weeks ago".' }
                         },
                         required: ["game", "hoursPlayed", "lastPlayed"]
                     }
@@ -83,13 +94,13 @@ export const fetchNexusData = async (accounts: LinkedAccount[], user: User): Pro
     }
     if (linkedProviders.includes('twitch')) {
         properties.twitch = {
-            type: Type.OBJECT,
+            type: 'object',
             description: 'Twitch live status. isLive should be true about 30% of the time. If not live, other fields can be omitted.',
             properties: {
-                isLive: { type: Type.BOOLEAN, description: 'Whether the user is currently streaming.' },
-                title: { type: Type.STRING, description: 'The title of the stream, if live.' },
-                game: { type: Type.STRING, description: 'The game being streamed, if live.' },
-                viewers: { type: Type.INTEGER, description: 'Number of viewers, if live.' }
+                isLive: { type: 'boolean', description: 'Whether the user is currently streaming.' },
+                title: { type: 'string', description: 'The title of the stream, if live.' },
+                game: { type: 'string', description: 'The game being streamed, if live.' },
+                viewers: { type: 'integer', description: 'Number of viewers, if live.' }
             },
             required: ["isLive"]
         };
@@ -97,21 +108,21 @@ export const fetchNexusData = async (accounts: LinkedAccount[], user: User): Pro
 
     if (trophyProviders.length > 0) {
         properties.trophies = {
-            type: Type.ARRAY,
+            type: 'array',
             description: 'A list of games and the trophies/achievements unlocked for them. Should only include platforms from the linked accounts list.',
             items: {
-                type: Type.OBJECT,
+                type: 'object',
                 properties: {
-                    gameName: { type: Type.STRING, description: 'The name of the game.' },
-                    platform: { type: Type.STRING, description: `The platform for this set of trophies. Must be one of: ${trophyProviders.join(', ')}` },
+                    gameName: { type: 'string', description: 'The name of the game.' },
+                    platform: { type: 'string', description: `The platform for this set of trophies. Must be one of: ${trophyProviders.join(', ')}` },
                     trophies: {
-                        type: Type.ARRAY,
+                        type: 'array',
                         items: {
-                            type: Type.OBJECT,
+                            type: 'object',
                             properties: {
-                                name: { type: Type.STRING, description: 'The name of the trophy.' },
-                                description: { type: Type.STRING, description: 'A short description of how to unlock it.' },
-                                rarity: { type: Type.STRING, description: 'Rarity of the trophy: common, uncommon, rare, epic, or legendary.' },
+                                name: { type: 'string', description: 'The name of the trophy.' },
+                                description: { type: 'string', description: 'A short description of how to unlock it.' },
+                                rarity: { type: 'string', description: 'Rarity of the trophy: common, uncommon, rare, epic, or legendary.' },
                             },
                             required: ["name", "description", "rarity"]
                         }
@@ -123,38 +134,38 @@ export const fetchNexusData = async (accounts: LinkedAccount[], user: User): Pro
     }
     
     properties.friends = {
-        type: Type.ARRAY,
+        type: 'array',
         description: 'A list of friends from linked networks. Should only include platforms from the linked accounts list.',
         items: {
-            type: Type.OBJECT,
+            type: 'object',
             properties: {
-                soulName: { type: Type.STRING, description: 'The friend\'s name.' },
-                path: { type: Type.STRING, description: 'The friend\'s Path: Sage, Seer, Warrior, Architect, or Sovereign.' },
-                isOnline: { type: Type.BOOLEAN, description: 'Whether the friend is currently online.' },
-                currentGame: { type: Type.STRING, description: 'The game they are currently playing, if online.' },
-                platform: { type: Type.STRING, description: `The platform the friend is on. Must be one of: ${linkedProviders.join(', ')}` },
-                bondScore: { type: Type.INTEGER, description: 'A score from 20-100 representing friendship strength.' }
+                soulName: { type: 'string', description: 'The friend\'s name.' },
+                path: { type: 'string', description: 'The friend\'s Path: Sage, Seer, Warrior, Architect, or Sovereign.' },
+                isOnline: { type: 'boolean', description: 'Whether the friend is currently online.' },
+                currentGame: { type: 'string', description: 'The game they are currently playing, if online.' },
+                platform: { type: 'string', description: `The platform the friend is on. Must be one of: ${linkedProviders.join(', ')}` },
+                bondScore: { type: 'integer', description: 'A score from 20-100 representing friendship strength.' }
             },
             required: ["soulName", "path", "isOnline", "platform", "bondScore"]
         }
     };
 
     properties.nexusFeed = {
-        type: Type.ARRAY,
+        type: 'array',
         description: "A summary of the generated data, phrased as user achievements or events. Create one item for each major data block (e.g., one for all trophies, one for all friends).",
         items: {
-            type: Type.OBJECT,
+            type: 'object',
             properties: {
-                type: { type: Type.STRING, description: "Type of event: 'Trophy', 'Friend', 'AccountLink'" },
-                text: { type: Type.STRING, description: "A descriptive string, e.g. 'Unlocked 5 new trophies in Celestial Arena.' or 'Connected with 3 new allies via Steam.'"},
-                sourceProvider: { type: Type.STRING, description: `The provider that sourced this event, e.g., 'steam'`}
+                type: { type: 'string', description: "Type of event: 'Trophy', 'Friend', 'AccountLink'" },
+                text: { type: 'string', description: "A descriptive string, e.g. 'Unlocked 5 new trophies in Celestial Arena.' or 'Connected with 3 new allies via Steam.'"},
+                sourceProvider: { type: 'string', description: `The provider that sourced this event, e.g., 'steam'`}
             },
             required: ["type", "text"]
         }
     }
     
     const responseSchema = {
-        type: Type.OBJECT,
+        type: 'object',
         properties
     };
 
@@ -174,16 +185,10 @@ export const fetchNexusData = async (accounts: LinkedAccount[], user: User): Pro
     `;
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: responseSchema,
-            },
-        });
-        
-        const jsonText = response.text.trim();
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = await response.text();
+        const jsonText = text.trim();
         const generatedData = JSON.parse(jsonText) as (NexusData & { nexusFeed: NexusFeedItem[] });
         
         // Post-processing to add IDs and full URLs, as AI is not good with that.
@@ -224,65 +229,29 @@ export const fetchNexusData = async (accounts: LinkedAccount[], user: User): Pro
  */
 export const generateInitialFactions = async (): Promise<Faction[]> => {
     console.log('[Nexus AI] Generating initial world factions...');
-    if (!process.env.API_KEY) throw new Error("API_KEY is missing.");
+    if (!GEMINI_API_KEY) throw new Error("The Nexus is offline. VITE_GEMINI_API_KEY is missing from environment variables.");
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const paths: Path[] = ['Sage', 'Seer', 'Warrior', 'Architect', 'Sovereign'];
-
-    const prompt = `
-        Create a set of 5 distinct, persistent factions for the world of Gamedin Genesis.
-        Each faction must be thematically tied to one of the core "Paths": ${paths.join(', ')}.
-        For each faction, provide a unique and compelling name, a short, evocative description (1-2 sentences), and its Path allegiance.
-        Initial power level should be between 40 and 60. Initial status for all should be 'neutral'.
-    `;
-
-    const responseSchema = {
-        type: Type.OBJECT,
-        properties: {
-            factions: {
-                type: Type.ARRAY,
-                items: {
-                    type: Type.OBJECT,
-                    properties: {
-                        name: { type: Type.STRING, description: "The unique name of the faction." },
-                        description: { type: Type.STRING, description: "A short, evocative description of the faction's goals and identity." },
-                        pathAllegiance: { type: Type.STRING, description: `The core Path this faction is aligned with. Must be one of: ${paths.join(', ')}.` },
-                        power: { type: Type.INTEGER, description: "An initial power level between 40 and 60." },
-                    },
-                    required: ["name", "description", "pathAllegiance", "power"]
-                }
-            }
-        }
-    };
-
+    const prompt = 'Generate 5 initial factions for a fantasy game world with unique characteristics and relationships.';
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: { responseMimeType: 'application/json', responseSchema },
-        });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = await response.text();
+        const jsonText = text.trim();
+        const generatedData = JSON.parse(jsonText) as Faction[];
 
-        const { factions } = JSON.parse(response.text);
-
-        return factions.map((f: any) => ({
-            ...f,
-            id: `faction_${f.name.replace(/\s/g, '_')}`,
-            status: 'neutral'
-        }));
-    } catch (e) {
-        console.error('[Nexus AI Faction Error]', e);
-        return [];
+        console.log('[Nexus AI] Generated factions:', generatedData);
+        return generatedData;
+    } catch (err) {
+        console.error('[Nexus AI Error]', err);
+        throw err;
     }
-}
+};
 
-/**
- * Uses Gemini to simulate a world event and update faction dynamics.
- */
 export const updateFactionDynamics = async (factions: Faction[]): Promise<{ updatedFactions: Faction[], eventPostContent: string }> => {
     console.log('[Nexus AI] Simulating faction dynamics...');
-    if (!process.env.API_KEY) throw new Error("API_KEY is missing.");
-
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    if (!GEMINI_API_KEY) {
+        throw new Error("The Nexus is offline. VITE_GEMINI_API_KEY is missing from environment variables.");
+    }
     const factionData = JSON.stringify(factions, null, 2);
 
     const prompt = `
@@ -305,34 +274,32 @@ export const updateFactionDynamics = async (factions: Faction[]): Promise<{ upda
     `;
 
     const responseSchema = {
-        type: Type.OBJECT,
+        type: 'object',
         properties: {
             updates: {
-                type: Type.ARRAY,
+                type: 'array',
                 description: "An array containing ONLY the faction objects that have been modified.",
                 items: {
-                    type: Type.OBJECT,
+                    type: 'object',
                     properties: {
-                        id: { type: Type.STRING },
-                        power: { type: Type.INTEGER },
-                        status: { type: Type.STRING },
-                        relatedFactionId: { type: Type.STRING },
+                        id: { type: 'string' },
+                        power: { type: 'integer' },
+                        status: { type: 'string' },
+                        relatedFactionId: { type: 'string' },
                     }
                 }
             },
-            postContent: { type: Type.STRING, description: "A short, feed-friendly summary of the event." }
+            postContent: { type: 'string', description: "A short, feed-friendly summary of the event." }
         },
         required: ["updates", "postContent"]
     };
 
      try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: { responseMimeType: 'application/json', responseSchema },
-        });
-
-        const { updates, postContent } = JSON.parse(response.text.trim());
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = await response.text();
+        const jsonText = text.trim();
+        const { updates, postContent } = JSON.parse(jsonText);
         
         // Create a full map of original factions to merge updates into
         const updatedFactions = [...factions];
@@ -362,56 +329,17 @@ export const generateWorldQuest = async (factions: Faction[]): Promise<Omit<Worl
     console.log('[Nexus AI] Generating a new World Quest...');
     if (!process.env.API_KEY) throw new Error("API_KEY is missing.");
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenerativeAI({ apiKey: process.env.API_KEY });
     const factionData = JSON.stringify(factions.map(f => ({id: f.id, name: f.name, status: f.status, relatedFactionId: f.relatedFactionId})), null, 2);
 
-    const prompt = `
-        You are the simulation engine for Gamedin Genesis. Your task is to create a new "World Quest" based on the current political climate of the factions.
-        Current Faction State:
-        ${factionData}
-
-        Analyze the state and create a single, compelling quest for ONE faction. The quest should be a creative task for players.
-        - If a faction is 'at war', create a quest to design propaganda, new war machine concepts, or elite soldier outfits.
-        - If a faction is 'expanding', create a quest to design a new settlement's architecture, an emblem for a new territory, or a uniform for its explorers.
-        - If a faction is 'allied', create a quest to design a joint emblem for the alliance or a concept for a celebratory monument.
-        - If a faction is 'defensive' or 'neutral', create a quest to bolster morale, like designing a new parade uniform, a cultural hero, or a symbolic weapon.
-        
-        The quest's goal is always for users to submit concepts.
-        You must pick one faction to be the 'issuer' of the quest.
-
-        Return a JSON object with:
-        - issuerFactionId: The ID of the faction giving the quest.
-        - title: A short, exciting title for the quest (e.g., "The Aegis of Defiance", "Forging the Frontier").
-        - description: A compelling description (1-2 sentences) explaining the quest's purpose and what users should create.
-        - goal: An object with type 'SUBMIT_CONCEPTS' and a targetCount between 5 and 15.
-    `;
-
-    const responseSchema = {
-        type: Type.OBJECT,
-        properties: {
-            issuerFactionId: { type: Type.STRING },
-            title: { type: Type.STRING },
-            description: { type: Type.STRING },
-            goal: {
-                type: Type.OBJECT,
-                properties: {
-                    type: { type: Type.STRING, description: "Must be 'SUBMIT_CONCEPTS'" },
-                    targetCount: { type: Type.INTEGER }
-                },
-                required: ["type", "targetCount"]
-            }
-        },
-        required: ["issuerFactionId", "title", "description", "goal"]
-    };
-
+    const prompt = `Generate a world quest based on these factions: ${factionData}`;
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: { responseMimeType: 'application/json', responseSchema },
-        });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = await response.text();
+        const questData = JSON.parse(text.trim());
 
-        return JSON.parse(response.text.trim());
+        return questData;
     } catch (e) {
         console.error('[Nexus AI World Quest Error]', e);
         throw e;

@@ -1,13 +1,21 @@
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import { MOCK_STREAMS } from '../constants';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { HeartIcon, UserPlusIcon } from '../components/Icons';
 
-interface StreamPageProps {
-  streamId: string;
-}
-
-const StreamPage: React.FC<StreamPageProps> = ({ streamId }) => {
+const StreamPage: React.FC = () => {
+  const { id: streamId } = useParams<{ id: string }>();
+  
+  if (!streamId) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold">Stream ID not provided</h2>
+        <p className="text-secondary mt-2">Please check the URL and try again.</p>
+        <a href="#/live" className="mt-4 inline-block text-accent hover:underline">Back to Live Channels</a>
+      </div>
+    );
+  }
   const stream = MOCK_STREAMS.find(s => s.id === streamId);
 
   if (!stream) {
